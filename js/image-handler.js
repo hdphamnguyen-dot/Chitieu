@@ -1,140 +1,79 @@
-// image-handler.js - Xử lý upload, nén và preview ảnh
+// image-handler.js - Xử lý upload, nén và hiển thị ảnh
 // ====================================================
 
 import { appState } from './storage.js';
 
-// Khởi tạo upload ảnh
+// Khởi tạo các sự kiện liên quan đến upload ảnh
 export function initImageUpload() {
-    const uploadArea = document.getElementById('uploadArea');
-    const imageInput = document.getElementById('imageInput');
+    const area = document.getElementById('uploadArea');
+    const input = document.getElementById('imageInput');
 
-    // Click để chọn ảnh
-    uploadArea.addEventListener('click', () => {
-        imageInput.click();
-    });
+    if (!area || !input) return;
 
-    // Drag over
-    uploadArea.addEventListener('dragover', (e) => {
+    // Khi nhấn vào vùng upload
+    area.onclick = () => input.click();
+
+    // Khi chọn file xong
+    input.onchange = (e) => handleFiles(e.target.files);
+
+    // Xử lý kéo thả ảnh (Drag & Drop)
+    area.addEventListener('dragover', (e) => {
         e.preventDefault();
-        uploadArea.classList.add('dragover');
+        area.style.backgroundColor = '#f0f7ff';
     });
 
-    // Drag leave
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
+    area.addEventListener('dragleave', () => {
+        area.style.backgroundColor = '';
     });
 
-    // Drop
-    uploadArea.addEventListener('drop', (e) => {
+    area.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadArea.classList.remove('dragover');
+        area.style.backgroundColor = '';
         handleFiles(e.dataTransfer.files);
     });
-
-    // Change
-    imageInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
 }
 
-// Xử lý files
+// Hàm xử lý các file ảnh được chọn
 async function handleFiles(files) {
     for (let file of files) {
-        if (file.type.startsWith('image/')) {
-            try {
-                const compressed = await compressImage(file);
-                appState.uploadedImages.push(compressed);
-            } catch (error) {
-                console.error('Lỗi nén ảnh:', error);
-            }
-        }
-    }
-    displayImagePreviews();
-}
+        if (!file.type.startsWith('image/')) continue;
 
-// Nén ảnh
-function compressImage(file) {
-    return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        
         reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-
-                // Resize tối đa 1024px
-                const maxSize = 1024;
-                if (width > height && width > maxSize) {
-                    height = (height * maxSize) / width;
-                    width = maxSize;
-                } else if (height > maxSize) {
-                    width = (width * maxSize) / height;
-                    height = maxSize;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // Convert to JPEG 60% quality
-                canvas.toBlob((blob) => {
-                    const reader2 = new FileReader();
-                    reader2.onloadend = () => {
-                        resolve({
-                            dataUrl: reader2.result,
-                            base64: reader2.result.split(',')[1]
-                        });
-                    };
-                    reader2.readAsDataURL(blob);
-                }, 'image/jpeg', 0.6);
-            };
-            
-            img.onerror = () => reject(new Error('Không thể tải ảnh'));
-            img.src = e.target.result;
+            // Lưu ảnh dưới dạng Base64 để gửi cho AI và DataUrl để hiển thị preview
+            const base64 = e.target.result.split(',')[1];
+            appState.uploadedImages.push({ 
+                dataUrl: e.target.result, 
+                base64: base64 
+            });
+            displayPreviews();
         };
-        
-        reader.onerror = () => reject(new Error('Không thể đọc file'));
         reader.readAsDataURL(file);
-    });
-}
-
-// Hiển thị preview ảnh
-export function displayImagePreviews() {
-    const previewDiv = document.getElementById('imagePreview');
-    
-    if (appState.uploadedImages.length === 0) {
-        previewDiv.innerHTML = '';
-        return;
     }
-    
-    previewDiv.innerHTML = appState.uploadedImages
-        .map((img, index) => `
-            <div class="image-preview-item">
-                <img src="${img.dataUrl}" alt="Preview">
-                <button class="remove-image" onclick="window.removeImageHandler(${index})">
-                    ×
-                </button>
-            </div>
-        `).join('');
 }
 
-// Xóa ảnh
+// Hiển thị các ảnh nhỏ (thumbnail) đã chọn lên màn hình
+function displayPreviews() {
+    const previewContainer = document.getElementById('imagePreview');
+    if (!previewContainer) return;
+
+    previewContainer.innerHTML = appState.uploadedImages.map((img, index) => `
+        <div class="image-preview-item" style="position: relative; display: inline-block; margin: 5px;">
+            <img src="${img.dataUrl}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd;">
+            <button onclick="window.removeImageHandler(${index})" style="position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px;">×</button>
+        </div>
+    `).join('');
+}
+
+// Hàm xóa một ảnh cụ thể khi nhấn dấu X
 export function removeImage(index) {
     appState.uploadedImages.splice(index, 1);
-    displayImagePreviews();
+    displayPreviews();
 }
 
-// Lấy số ảnh đã upload
-export function getUploadedImagesCount() {
-    return appState.uploadedImages.length;
-}
-
-// Xóa tất cả ảnh
+// --- ĐÂY LÀ HÀM QUAN TRỌNG BỊ THIẾU CỦA BẠN ---
+// Hàm xóa toàn bộ ảnh (gọi sau khi AI xử lý xong)
 export function clearUploadedImages() {
     appState.uploadedImages = [];
-    displayImagePreviews();
+    displayPreviews();
 }

@@ -1,27 +1,14 @@
 // charts.js - Quản lý biểu đồ thống kê
 // =====================================
 
-import { appState, getFilteredTransactions } from './storage.js';
+import { getFilteredTransactions } from './storage.js';
 import { formatMoney } from './ui.js';
 
-let charts = {
-    incomeExpense: null,
-    categoryPie: null,
-    trend: null,
-    topCategories: null
-};
+let charts = {}; // Nơi lưu trữ các biểu đồ đang hiện
 
-// Cập nhật tất cả biểu đồ
 export function updateAllCharts() {
     const filterValue = document.getElementById('chartFilter').value;
-    let filteredData;
-    
-    if (filterValue === 'all') {
-        filteredData = appState.transactions;
-    } else {
-        const days = parseInt(filterValue);
-        filteredData = getFilteredTransactions(days);
-    }
+    const filteredData = getFilteredTransactions(filterValue);
 
     updateIncomeExpenseChart(filteredData);
     updateCategoryPieChart(filteredData);
@@ -29,266 +16,97 @@ export function updateAllCharts() {
     updateTopCategoriesChart(filteredData);
 }
 
-// Biểu đồ Thu nhập vs Chi tiêu
+// 1. Biểu đồ Cột: Thu Nhập vs Chi Tiêu
 function updateIncomeExpenseChart(data) {
-    const ctx = document.getElementById('incomeExpenseChart');
-    if (!ctx) return;
-
-    const totalIncome = data
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+    const income = data.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = data.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     
-    const totalExpense = data
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    if (charts.incomeExpense) {
-        charts.incomeExpense.destroy();
-    }
-
-    charts.incomeExpense = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Thu Nhập', 'Chi Tiêu', 'Số Dư'],
-            datasets: [{
-                label: 'Số tiền (VNĐ)',
-                data: [totalIncome, totalExpense, totalIncome - totalExpense],
-                backgroundColor: [
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(102, 126, 234, 0.8)'
-                ],
-                borderColor: [
-                    'rgb(16, 185, 129)',
-                    'rgb(239, 68, 68)',
-                    'rgb(102, 126, 234)'
-                ],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => formatMoney(ctx.parsed.y)
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => (value / 1000000).toFixed(1) + 'M'
-                    }
-                }
-            }
-        }
-    });
+    renderChart('incomeExpenseChart', 'bar', ['Thu Nhập', 'Chi Tiêu'], [income, expense], ['#10b981', '#ef4444']);
 }
 
-// Biểu đồ Phân bổ chi tiêu theo hạng mục
+// 2. Biểu đồ Tròn: Phân bổ chi tiêu
 function updateCategoryPieChart(data) {
-    const ctx = document.getElementById('categoryPieChart');
-    if (!ctx) return;
-
     const expenses = data.filter(t => t.type === 'expense');
-    const categoryTotals = {};
-
-    expenses.forEach(t => {
-        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
-    });
-
-    const sortedCategories = Object.entries(categoryTotals)
-        .sort((a, b) => b[1] - a[1]);
-
-    if (charts.categoryPie) {
-        charts.categoryPie.destroy();
-    }
-
-    const colors = [
-        'rgba(102, 126, 234, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(245, 158, 11, 0.8)',
-        'rgba(139, 92, 246, 0.8)',
-        'rgba(236, 72, 153, 0.8)',
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(59, 130, 246, 0.8)'
-    ];
-
-    charts.categoryPie = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: sortedCategories.map(c => c[0]),
-            datasets: [{
-                data: sortedCategories.map(c => c[1]),
-                backgroundColor: colors,
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { boxWidth: 15, padding: 10 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => {
-                            const label = ctx.label || '';
-                            const value = formatMoney(ctx.parsed);
-                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((ctx.parsed / total) * 100).toFixed(1);
-                            return `${label}: ${value} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
+    const categories = {};
+    expenses.forEach(t => categories[t.category] = (categories[t.category] || 0) + t.amount);
+    
+    renderChart('categoryPieChart', 'doughnut', Object.keys(categories), Object.values(categories));
 }
 
-// Biểu đồ Xu hướng chi tiêu theo thời gian
+// 3. Biểu đồ Đường: Xu hướng theo thời gian
 function updateTrendChart(data) {
-    const ctx = document.getElementById('trendChart');
-    if (!ctx) return;
-
     const dailyData = {};
     
+    // Gom nhóm dữ liệu theo ngày YYYY-MM-DD để dễ sắp xếp
     data.forEach(t => {
-        const date = new Date(t.date).toLocaleDateString('vi-VN');
-        if (!dailyData[date]) {
-            dailyData[date] = { income: 0, expense: 0 };
-        }
-        if (t.type === 'income') {
-            dailyData[date].income += t.amount;
-        } else {
-            dailyData[date].expense += t.amount;
-        }
+        const dateKey = new Date(t.date).toISOString().split('T')[0];
+        if (!dailyData[dateKey]) dailyData[dateKey] = { income: 0, expense: 0 };
+        dailyData[dateKey][t.type] += t.amount;
     });
 
-    const sortedDates = Object.keys(dailyData).sort((a, b) => {
-        const dateA = new Date(a.split('/').reverse().join('-'));
-        const dateB = new Date(b.split('/').reverse().join('-'));
-        return dateA - dateB;
-    });
+    // Sắp xếp ngày tháng cho đúng thứ tự từ cũ đến mới
+    const sortedDates = Object.keys(dailyData).sort();
+    const labels = sortedDates.map(d => new Date(d).toLocaleDateString('vi-VN'));
+    const incomeData = sortedDates.map(d => dailyData[d].income);
+    const expenseData = sortedDates.map(d => dailyData[d].expense);
 
-    if (charts.trend) {
-        charts.trend.destroy();
-    }
-
-    charts.trend = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedDates,
-            datasets: [
-                {
-                    label: 'Thu Nhập',
-                    data: sortedDates.map(d => dailyData[d].income),
-                    borderColor: 'rgb(16, 185, 129)',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                },
-                {
-                    label: 'Chi Tiêu',
-                    data: sortedDates.map(d => dailyData[d].expense),
-                    borderColor: 'rgb(239, 68, 68)',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => 
-                            ctx.dataset.label + ': ' + formatMoney(ctx.parsed.y)
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => (value / 1000000).toFixed(1) + 'M'
-                    }
-                }
-            }
-        }
-    });
+    renderTrendChart(labels, incomeData, expenseData);
 }
 
-// Biểu đồ Top 5 hạng mục chi tiêu
+// 4. Biểu đồ Cột ngang: Top 5 hạng mục
 function updateTopCategoriesChart(data) {
-    const ctx = document.getElementById('topCategoriesChart');
-    if (!ctx) return;
-
     const expenses = data.filter(t => t.type === 'expense');
-    const categoryTotals = {};
+    const categories = {};
+    expenses.forEach(t => categories[t.category] = (categories[t.category] || 0) + t.amount);
 
-    expenses.forEach(t => {
-        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
-    });
-
-    const topCategories = Object.entries(categoryTotals)
+    const top5 = Object.entries(categories)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5);
 
-    if (charts.topCategories) {
-        charts.topCategories.destroy();
-    }
+    renderChart('topCategoriesChart', 'bar', top5.map(i => i[0]), top5.map(i => i[1]), '#6366f1', true);
+}
 
-    charts.topCategories = new Chart(ctx, {
-        type: 'bar',
+// Hàm vẽ biểu đồ chung
+function renderChart(id, type, labels, data, colors, isHorizontal = false) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy(); // Xóa biểu đồ cũ để tránh lỗi chồng lấp
+
+    charts[id] = new Chart(ctx, {
+        type: type,
         data: {
-            labels: topCategories.map(c => c[0]),
+            labels: labels,
             datasets: [{
-                label: 'Chi tiêu (VNĐ)',
-                data: topCategories.map(c => c[1]),
-                backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                borderColor: 'rgb(102, 126, 234)',
-                borderWidth: 2
+                data: data,
+                backgroundColor: colors || ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
+                borderWidth: 1
             }]
         },
         options: {
-            indexAxis: 'y',
+            indexAxis: isHorizontal ? 'y' : 'x',
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => formatMoney(ctx.parsed.x)
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => (value / 1000000).toFixed(1) + 'M'
-                    }
-                }
-            }
+            plugins: { legend: { display: type === 'doughnut' } }
         }
     });
 }
 
-// Hủy tất cả biểu đồ
-export function destroyAllCharts() {
-    Object.values(charts).forEach(chart => {
-        if (chart) chart.destroy();
+// Hàm riêng cho biểu đồ đường (vì nó có 2 đường kẻ)
+function renderTrendChart(labels, income, expense) {
+    const id = 'trendChart';
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+
+    charts[id] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Thu Nhập', data: income, borderColor: '#10b981', tension: 0.3 },
+                { label: 'Chi Tiêu', data: expense, borderColor: '#ef4444', tension: 0.3 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
     });
 }

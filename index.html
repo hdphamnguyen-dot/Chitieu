@@ -11,7 +11,7 @@
     <div class="container">
         <div class="header">
             <h1>💰 Quản Lý Chi Tiêu Thông Minh</h1>
-            <p>Nhập giao dịch bằng ngôn ngữ tự nhiên, AI sẽ tự động phân loại</p>
+            <p>Nhập giao dịch bằng ngôn ngữ tự nhiên hoặc ảnh hóa đơn</p>
             <div class="tabs">
                 <button class="tab active">Trang Chủ</button>
                 <button class="tab">Biểu Đồ</button>
@@ -19,144 +19,72 @@
             </div>
         </div>
 
-        <!-- Tab Trang Chủ -->
         <div id="main-tab" class="content tab-content active">
             <div class="summary-cards">
-                <div class="card">
-                    <h3>Tổng Thu Nhập</h3>
-                    <div class="amount" id="totalIncome">0 ₫</div>
-                </div>
-                <div class="card">
-                    <h3>Tổng Chi Tiêu</h3>
-                    <div class="amount" id="totalExpense">0 ₫</div>
-                </div>
-                <div class="card">
-                    <h3>Số Dư</h3>
-                    <div class="amount" id="balance">0 ₫</div>
-                </div>
+                <div class="card"><h3>Tổng Thu Nhập</h3><div class="amount" id="totalIncome">0 ₫</div></div>
+                <div class="card"><h3>Tổng Chi Tiêu</h3><div class="amount" id="totalExpense">0 ₫</div></div>
+                <div class="card"><h3>Số Dư</h3><div class="amount" id="balance">0 ₫</div></div>
             </div>
 
             <div class="input-section">
                 <div class="input-group">
-                    <label>Nhập giao dịch bằng ngôn ngữ tự nhiên:</label>
-                    <textarea id="naturalInput" placeholder="VD: Hôm nay tôi có thu nhập 2 triệu từ lương và chi tiêu 500k mua thực phẩm, 200k mua sách"></textarea>
+                    <label>Nhập giao dịch:</label>
+                    <textarea id="naturalInput" placeholder="VD: Hôm nay tôi có thu nhập 2 triệu từ lương"></textarea>
                 </div>
-                
                 <div class="input-group">
-                    <label>Hoặc tải lên ảnh hóa đơn / biên lai:</label>
-                    <div class="image-upload-area" id="uploadArea">
-                        <div class="upload-icon">📸</div>
-                        <p>Kéo thả ảnh vào đây hoặc nhấn để chọn</p>
-                        <p style="font-size: 12px; color: #666; margin-top: 5px;">Hỗ trợ JPG, PNG (tự động nén và tối ưu hóa)</p>
-                    </div>
+                    <label>Tải ảnh hóa đơn:</label>
+                    <div class="image-upload-area" id="uploadArea">📸 Kéo thả hoặc nhấn để chọn ảnh</div>
                     <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
                     <div class="image-preview" id="imagePreview"></div>
                 </div>
-                
                 <button id="processBtn">Xử Lý Giao Dịch</button>
             </div>
-
             <div id="message"></div>
-
             <div class="transactions">
                 <h2>Lịch Sử Giao Dịch</h2>
                 <div id="transactionList"></div>
             </div>
         </div>
 
-        <!-- Tab Biểu Đồ -->
         <div id="charts-tab" class="content tab-content">
             <h2>Biểu Đồ Thống Kê</h2>
-            
-            <div class="filter-section">
-                <div class="input-group" style="margin: 0;">
-                    <select id="chartFilter">
-                        <option value="all">Tất cả thời gian</option>
-                        <option value="7">7 ngày qua</option>
-                        <option value="30">30 ngày qua</option>
-                        <option value="90">90 ngày qua</option>
-                        <option value="365">Năm nay</option>
-                    </select>
-                </div>
-            </div>
-
+            <select id="chartFilter">
+                <option value="all">Tất cả thời gian</option>
+                <option value="7">7 ngày qua</option>
+                <option value="30">30 ngày qua</option>
+            </select>
             <div class="charts-grid">
-                <div class="chart-container">
-                    <h3>📊 Thu Nhập vs Chi Tiêu</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="incomeExpenseChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <h3>🥧 Phân Bổ Chi Tiêu Theo Hạng Mục</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="categoryPieChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <h3>📈 Xu Hướng Chi Tiêu Theo Thời Gian</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <h3>💰 Top 5 Hạng Mục Chi Tiêu Nhiều Nhất</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="topCategoriesChart"></canvas>
-                    </div>
-                </div>
+                <div class="chart-container"><canvas id="incomeExpenseChart"></canvas></div>
+                <div class="chart-container"><canvas id="categoryPieChart"></canvas></div>
+                <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                <div class="chart-container"><canvas id="topCategoriesChart"></canvas></div>
             </div>
         </div>
 
-        <!-- Tab Cài Đặt AI -->
         <div id="settings-tab" class="content tab-content">
             <div class="settings-section">
-                <h3>OpenRouter API <span class="api-status disconnected" id="openrouterStatus">Chưa kết nối</span></h3>
-                <div class="input-group">
-                    <label>API Key:</label>
-                    <input type="password" id="openrouterKey" placeholder="sk-or-v1-...">
-                </div>
-                <div class="input-group">
-                    <label>Model:</label>
-                    <select id="openrouterModel" disabled>
-                        <option value="">Chọn model...</option>
-                    </select>
-                </div>
-                <button id="openrouterTestBtn">Kiểm Tra & Lấy Danh Sách Model</button>
-            </div>
-
-            <div class="settings-section">
                 <h3>Google Gemini API <span class="api-status disconnected" id="geminiStatus">Chưa kết nối</span></h3>
-                <div class="input-group">
-                    <label>API Key:</label>
-                    <input type="password" id="geminiKey" placeholder="AIza...">
-                </div>
-                <div class="input-group">
-                    <label>Model:</label>
-                    <select id="geminiModel" disabled>
-                        <option value="">Chọn model...</option>
-                    </select>
-                </div>
-                <button id="geminiTestBtn">Kiểm Tra & Lấy Danh Sách Model</button>
+                <input type="password" id="geminiKey" placeholder="Nhập API Key Gemini">
+                <select id="geminiModel" disabled><option value="">Chọn model...</option></select>
+                <button id="geminiTestBtn">Kiểm Tra Gemini</button>
             </div>
-
             <div class="settings-section">
-                <h3>API Đang Sử Dụng</h3>
+                <h3>OpenRouter API <span class="api-status disconnected" id="openrouterStatus">Chưa kết nối</span></h3>
+                <input type="password" id="openrouterKey" placeholder="Nhập API Key OpenRouter">
+                <select id="openrouterModel" disabled><option value="">Chọn model...</option></select>
+                <button id="openrouterTestBtn">Kiểm Tra OpenRouter</button>
+            </div>
+            <div class="settings-section">
+                <label>API Sử Dụng:</label>
                 <select id="activeProvider">
                     <option value="">Chưa chọn</option>
-                    <option value="openrouter">OpenRouter</option>
                     <option value="gemini">Google Gemini</option>
+                    <option value="openrouter">OpenRouter</option>
                 </select>
             </div>
-
             <button id="saveSettingsBtn">Lưu Cài Đặt</button>
         </div>
     </div>
-
-    <!-- Import modules (sử dụng type="module") -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
