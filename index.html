@@ -10,8 +10,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💰 Quản Lý Chi Tiêu</h1>
-            <p>Nhập giao dịch bằng văn bản hoặc ảnh hóa đơn</p>
+            <h1>💰 Quản Lý Chi Tiêu AI</h1>
+            <p>Dành cho các nhà quản lý tài chính tương lai</p>
             <div class="tabs">
                 <button class="tab active">Trang Chủ</button>
                 <button class="tab">Biểu Đồ</button>
@@ -21,42 +21,82 @@
 
         <div id="main-tab" class="content tab-content active">
             <div class="summary-cards">
-                <div class="card"><h3>Tổng Thu</h3><div class="amount" id="totalIncome">0 ₫</div></div>
-                <div class="card"><h3>Tổng Chi</h3><div class="amount" id="totalExpense">0 ₫</div></div>
+                <div class="card"><h3>Tổng Thu</h3><div class="amount income" id="totalIncome">0 ₫</div></div>
+                <div class="card"><h3>Tổng Chi</h3><div class="amount expense" id="totalExpense">0 ₫</div></div>
                 <div class="card"><h3>Số Dư</h3><div class="amount" id="balance">0 ₫</div></div>
             </div>
 
             <div class="input-section">
                 <div class="input-group">
-                    <label>Nhập nội dung:</label>
-                    <textarea id="naturalInput" placeholder="Ví dụ: Ăn sáng 30k"></textarea>
+                    <label><b>Nhập giao dịch bằng lời:</b></label>
+                    <textarea id="naturalInput" placeholder="Ví dụ: Ăn sáng hết 30k, được mẹ cho 100k lương cứng..."></textarea>
                 </div>
-                <div class="input-group">
-                    <label>Tải ảnh:</label>
-                    <div class="image-upload-area" id="uploadArea">📸 Kéo thả ảnh vào đây</div>
+                <div class="input-group" style="margin-top: 15px;">
+                    <label><b>Hoặc tải ảnh hóa đơn:</b></label>
+                    <div class="image-upload-area" id="uploadArea">📸 Nhấn hoặc kéo thả ảnh vào đây</div>
                     <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
-                    <div class="image-preview" id="imagePreview"></div>
+                    <div id="imagePreview" style="margin-top: 10px;"></div>
                 </div>
-                <button id="processBtn">Xử Lý Giao Dịch</button>
+                <button id="processBtn" style="margin-top: 15px;">🤖 AI PHÂN TÍCH NGAY</button>
             </div>
+
             <div id="message"></div>
-            
+
             <div class="transactions">
                 <h2>Lịch Sử Giao Dịch</h2>
-                <div class="transaction-header">
-                    <span>Ngày</span>
-                    <span>Hạng mục</span>
-                    <span>Mô tả</span>
-                    <span class="text-right">Số tiền</span>
-                    <span class="text-center">Xóa</span>
-                </div>
                 <div id="transactionList"></div>
             </div>
         </div>
 
-        <div id="charts-tab" class="content tab-content">...</div>
-        <div id="settings-tab" class="content tab-content">...</div>
+        <div id="charts-tab" class="content tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Biểu Đồ Thống Kê</h2>
+                <select id="chartFilter" style="padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="all">Tất cả thời gian</option>
+                    <option value="7">7 ngày gần đây</option>
+                    <option value="30">30 ngày gần đây</option>
+                    <option value="365">Trong năm nay</option>
+                </select>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-container"><canvas id="incomeExpenseChart"></canvas></div>
+                <div class="chart-container"><canvas id="categoryPieChart"></canvas></div>
+                <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                <div class="chart-container"><canvas id="topCategoriesChart"></canvas></div>
+            </div>
+        </div>
+
+        <div id="settings-tab" class="content tab-content">
+            <h2>Cấu Hình Bộ Não AI</h2>
+            
+            <div class="settings-section">
+                <h3>1. Google Gemini <span class="api-status disconnected" id="geminiStatus">Chưa kết nối</span></h3>
+                <input type="password" id="geminiKey" placeholder="Dán Gemini API Key vào đây">
+                <select id="geminiModel" disabled><option value="">Đang đợi kết nối...</option></select>
+                <button id="geminiTestBtn">Kết nối Gemini</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>2. OpenRouter <span class="api-status disconnected" id="openrouterStatus">Chưa kết nối</span></h3>
+                <input type="password" id="openrouterKey" placeholder="Dán OpenRouter API Key vào đây">
+                <select id="openrouterModel" disabled><option value="">Đang đợi kết nối...</option></select>
+                <button id="openrouterTestBtn">Kết nối OpenRouter</button>
+            </div>
+
+            <div class="settings-section">
+                <label><b>Chọn AI em muốn dùng:</b></label>
+                <select id="activeProvider" style="width: 100%; margin-top: 10px; padding: 10px;">
+                    <option value="">-- Vui lòng chọn --</option>
+                    <option value="gemini">Google Gemini (Khuyên dùng)</option>
+                    <option value="openrouter">OpenRouter AI</option>
+                </select>
+            </div>
+            
+            <button id="saveSettingsBtn" style="background-color: #10b981; margin-top: 10px;">LƯU CÀI ĐẶT</button>
+        </div>
     </div>
+
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

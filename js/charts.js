@@ -7,7 +7,11 @@ import { formatMoney } from './ui.js';
 let charts = {}; // Nơi lưu trữ các biểu đồ đang hiện
 
 export function updateAllCharts() {
-    const filterValue = document.getElementById('chartFilter').value;
+    // --- LỚP BẢO VỆ: Kiểm tra xem hộp lọc có tồn tại không ---
+    const filterEl = document.getElementById('chartFilter');
+    if (!filterEl) return; // Nếu không thấy cái hộp này thì thoát ra luôn, không làm tiếp
+
+    const filterValue = filterEl.value;
     const filteredData = getFilteredTransactions(filterValue);
 
     updateIncomeExpenseChart(filteredData);
@@ -37,14 +41,12 @@ function updateCategoryPieChart(data) {
 function updateTrendChart(data) {
     const dailyData = {};
     
-    // Gom nhóm dữ liệu theo ngày YYYY-MM-DD để dễ sắp xếp
     data.forEach(t => {
         const dateKey = new Date(t.date).toISOString().split('T')[0];
         if (!dailyData[dateKey]) dailyData[dateKey] = { income: 0, expense: 0 };
         dailyData[dateKey][t.type] += t.amount;
     });
 
-    // Sắp xếp ngày tháng cho đúng thứ tự từ cũ đến mới
     const sortedDates = Object.keys(dailyData).sort();
     const labels = sortedDates.map(d => new Date(d).toLocaleDateString('vi-VN'));
     const incomeData = sortedDates.map(d => dailyData[d].income);
@@ -70,7 +72,7 @@ function updateTopCategoriesChart(data) {
 function renderChart(id, type, labels, data, colors, isHorizontal = false) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
-    if (charts[id]) charts[id].destroy(); // Xóa biểu đồ cũ để tránh lỗi chồng lấp
+    if (charts[id]) charts[id].destroy(); 
 
     charts[id] = new Chart(ctx, {
         type: type,
@@ -91,7 +93,7 @@ function renderChart(id, type, labels, data, colors, isHorizontal = false) {
     });
 }
 
-// Hàm riêng cho biểu đồ đường (vì nó có 2 đường kẻ)
+// Hàm riêng cho biểu đồ đường
 function renderTrendChart(labels, income, expense) {
     const id = 'trendChart';
     const ctx = document.getElementById(id);

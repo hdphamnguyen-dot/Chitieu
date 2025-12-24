@@ -6,17 +6,46 @@ import { processTransaction } from './ai-processor.js';
 import { updateAllCharts } from './charts.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadData(); initImageUpload(); loadAPISettingsToForm();
-    updateSummaryCards(); updateTransactionList();
+    // 1. Tải dữ liệu và cài đặt ban đầu
+    loadData(); 
+    initImageUpload(); 
+    loadAPISettingsToForm();
     
-    document.querySelectorAll('.tab').forEach((b, i) => b.onclick = () => switchTab(['main', 'charts', 'settings'][i]));
-    document.getElementById('processBtn').onclick = processTransaction;
-    document.getElementById('geminiTestBtn').onclick = testGemini;
-    document.getElementById('openrouterTestBtn').onclick = testOpenRouter;
-    document.getElementById('saveSettingsBtn').onclick = saveAPISettings;
-    document.getElementById('chartFilter').onchange = updateAllCharts;
+    // 2. Cập nhật giao diện lần đầu
+    updateSummaryCards(); 
+    updateTransactionList();
+    
+    // 3. Gắn sự kiện cho các Tab (Cách viết an toàn)
+    const tabs = ['main', 'charts', 'settings'];
+    document.querySelectorAll('.tab').forEach((button, index) => {
+        button.onclick = () => switchTab(tabs[index]);
+    });
+
+    // 4. Gắn sự kiện cho các nút bấm chức năng
+    const btnIds = {
+        'processBtn': processTransaction,
+        'geminiTestBtn': testGemini,
+        'openrouterTestBtn': testOpenRouter,
+        'saveSettingsBtn': saveAPISettings
+    };
+
+    for (let id in btnIds) {
+        const el = document.getElementById(id);
+        if (el) el.onclick = btnIds[id];
+    }
+
+    // 5. Gắn sự kiện cho bộ lọc biểu đồ
+    const chartFilter = document.getElementById('chartFilter');
+    if (chartFilter) chartFilter.onchange = updateAllCharts;
+
+    // 6. Lắng nghe lệnh vẽ lại biểu đồ từ các module khác
     document.addEventListener('updateCharts', updateAllCharts);
 });
 
-window.deleteTransactionHandler = (i) => { deleteTransaction(i); updateTransactionList(); updateSummaryCards(); };
+// Các hàm toàn cục (để HTML có thể gọi được)
+window.deleteTransactionHandler = (i) => { 
+    deleteTransaction(i); 
+    updateTransactionList(); 
+    updateSummaryCards(); 
+};
 window.removeImageHandler = (i) => removeImage(i);

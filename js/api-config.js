@@ -1,63 +1,119 @@
 import { appState, saveData } from './storage.js';
 import { showMessage, updateStatusIndicators } from './ui.js';
 
+// Kiểm tra kết nối OpenRouter
 export async function testOpenRouter() {
-    const key = document.getElementById('openrouterKey').value;
-    if (!key) return showMessage('Cần API Key!', 'error');
+    const keyEl = document.getElementById('openrouterKey');
+    if (!keyEl) return;
+    
+    const key = keyEl.value;
+    if (!key) return showMessage('Cần API Key OpenRouter!', 'error');
+
     try {
-        const res = await fetch('https://openrouter.ai/api/v1/models', { headers: { 'Authorization': `Bearer ${key}` } });
+        showMessage('Đang kiểm tra OpenRouter...', 'loading');
+        const res = await fetch('https://openrouter.ai/api/v1/models', { 
+            headers: { 'Authorization': `Bearer ${key}` } 
+        });
+        
+        if (!res.ok) throw new Error('Key không hợp lệ');
+        
         const data = await res.json();
         const select = document.getElementById('openrouterModel');
-        select.innerHTML = data.data.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
-        select.disabled = false;
+        
+        if (select) {
+            select.innerHTML = data.data.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
+            select.disabled = false;
+        }
+
         appState.settings.openrouter.key = key;
         appState.settings.openrouter.connected = true;
         updateStatusIndicators();
-        showMessage('Kết nối OpenRouter xong!', 'success');
-    } catch (e) { showMessage('Lỗi OpenRouter', 'error'); }
+        showMessage('Kết nối OpenRouter thành công!', 'success');
+    } catch (e) { 
+        showMessage('Lỗi kết nối OpenRouter. Kiểm tra lại Key!', 'error'); 
+    }
 }
 
+// Kiểm tra kết nối Gemini
 export async function testGemini() {
-    const key = document.getElementById('geminiKey').value;
-    if (!key) return showMessage('Cần API Key!', 'error');
+    const keyEl = document.getElementById('geminiKey');
+    if (!keyEl) return;
+
+    const key = keyEl.value;
+    if (!key) return showMessage('Cần API Key Gemini!', 'error');
+
     try {
+        showMessage('Đang kiểm tra Gemini...', 'loading');
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        
+        if (!res.ok) throw new Error('Key không hợp lệ');
+
         const data = await res.json();
         const select = document.getElementById('geminiModel');
-        select.innerHTML = data.models.filter(m => m.name.includes('gemini')).map(m => `<option value="${m.name}">${m.displayName || m.name}</option>`).join('');
-        select.disabled = false;
+        
+        if (select) {
+            select.innerHTML = data.models
+                .filter(m => m.name.includes('gemini'))
+                .map(m => `<option value="${m.name}">${m.displayName || m.name}</option>`).join('');
+            select.disabled = false;
+        }
+
         appState.settings.gemini.key = key;
         appState.settings.gemini.connected = true;
         updateStatusIndicators();
-        showMessage('Kết nối Gemini xong!', 'success');
-    } catch (e) { showMessage('Lỗi Gemini', 'error'); }
+        showMessage('Kết nối Gemini thành công!', 'success');
+    } catch (e) { 
+        showMessage('Lỗi kết nối Gemini. Kiểm tra lại Key!', 'error'); 
+    }
 }
 
+// Lưu cài đặt khi nhấn nút
 export function saveAPISettings() {
-    appState.settings.openrouter.model = document.getElementById('openrouterModel').value;
-    appState.settings.gemini.model = document.getElementById('geminiModel').value;
-    appState.settings.activeProvider = document.getElementById('activeProvider').value;
+    const orModel = document.getElementById('openrouterModel');
+    const geModel = document.getElementById('geminiModel');
+    const provider = document.getElementById('activeProvider');
+
+    if (orModel) appState.settings.openrouter.model = orModel.value;
+    if (geModel) appState.settings.gemini.model = geModel.value;
+    if (provider) appState.settings.activeProvider = provider.value;
+
     saveData();
-    showMessage('Đã lưu!', 'success');
+    showMessage('Đã lưu cấu hình API!', 'success');
 }
 
+// Kiểm tra xem đã cài đặt API chưa
 export function isProviderConfigured() {
     const p = appState.settings.activeProvider;
     if (!p) return false;
-    return p === 'gemini' ? (appState.settings.gemini.key && appState.settings.gemini.model) : (appState.settings.openrouter.key && appState.settings.openrouter.model);
+    if (p === 'gemini') {
+        return appState.settings.gemini.key && appState.settings.gemini.model;
+    } else {
+        return appState.settings.openrouter.key && appState.settings.openrouter.model;
+    }
 }
 
 export function getActiveAPIKey() {
-    return appState.settings.activeProvider === 'gemini' ? appState.settings.gemini.key : appState.settings.openrouter.key;
+    return appState.settings.activeProvider === 'gemini' 
+        ? appState.settings.gemini.key 
+        : appState.settings.openrouter.key;
 }
 
 export function getActiveModel() {
-    return appState.settings.activeProvider === 'gemini' ? appState.settings.gemini.model : appState.settings.openrouter.model;
+    return appState.settings.activeProvider === 'gemini' 
+        ? appState.settings.gemini.model 
+        : appState.settings.openrouter.model;
 }
 
+// --- ĐÂY LÀ HÀM BỊ LỖI CỦA EM ĐÃ ĐƯỢC SỬA ---
 export function loadAPISettingsToForm() {
-    document.getElementById('geminiKey').value = appState.settings.gemini.key;
-    document.getElementById('openrouterKey').value = appState.settings.openrouter.key;
-    document.getElementById('activeProvider').value = appState.settings.activeProvider;
+    const gKey = document.getElementById('geminiKey');
+    const oKey = document.getElementById('openrouterKey');
+    const aProv = document.getElementById('activeProvider');
+
+    // Chỉ điền giá trị nếu tìm thấy các ô nhập liệu trong HTML
+    if (gKey) gKey.value = appState.settings.gemini.key || '';
+    if (oKey) oKey.value = appState.settings.openrouter.key || '';
+    if (aProv) aProv.value = appState.settings.activeProvider || '';
+    
     updateStatusIndicators();
 }
