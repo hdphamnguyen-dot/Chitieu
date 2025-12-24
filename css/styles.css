@@ -5,6 +5,7 @@
     --danger: #ef4444;
     --bg: #f8fafc;
     --text: #1e293b;
+    --border: #e2e8f0;
 }
 
 body {
@@ -63,7 +64,7 @@ body {
     color: var(--primary);
 }
 
-/* Thẻ tóm tắt Thu nhập / Chi tiêu */
+/* Thẻ tóm tắt */
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -76,7 +77,7 @@ body {
     padding: 20px;
     border-radius: 12px;
     text-align: center;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
 }
 
 .card h3 {
@@ -135,7 +136,7 @@ textarea {
     cursor: pointer;
 }
 
-/* Thông báo lỗi / Thành công */
+/* Thông báo */
 #message {
     padding: 10px;
     border-radius: 8px;
@@ -148,27 +149,85 @@ textarea {
 #message.error { background: #fee2e2; color: #991b1b; display: block; }
 #message.loading { background: #e0f2fe; color: #075985; display: block; }
 
-/* Danh sách giao dịch */
-.transaction-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #f1f5f9;
+/* --- CẢI TIẾN LỊCH SỬ GIAO DỊCH --- */
+.transactions h2 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: var(--text);
 }
 
-.transaction-item b { color: var(--primary); }
+.transaction-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 120px 60px; /* 4 cột cố định */
+    gap: 10px;
+    padding: 10px 15px;
+    background: #f1f5f9;
+    font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    border: 1px solid var(--border);
+}
+
+.transaction-item {
+    display: grid;
+    grid-template-columns: 100px 1fr 120px 60px; /* Phải khớp với header */
+    gap: 10px;
+    align-items: center;
+    padding: 12px 15px;
+    border: 1px solid var(--border);
+    border-top: none;
+    background: white;
+    transition: background 0.2s;
+}
+
+.transaction-item:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.transaction-item:hover {
+    background-color: #f8fafc;
+}
+
+.col-cat { 
+    font-weight: 600; 
+    color: var(--primary); 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
+
+.col-desc { 
+    color: #475569; 
+    font-size: 0.95rem; 
+}
+
+.col-amount { 
+    text-align: right; 
+    font-weight: bold; 
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.col-action { 
+    text-align: center; 
+}
 
 .delete-btn {
     background: #fee2e2;
     color: #ef4444;
     border: none;
-    padding: 5px 10px;
+    padding: 5px 8px;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 0.75rem;
+    transition: 0.2s;
 }
 
-/* BIỂU ĐỒ - Sửa lỗi kéo dài vô tận */
+.delete-btn:hover {
+    background: #fecaca;
+}
+
+/* Biểu đồ */
 .charts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -178,21 +237,20 @@ textarea {
 .chart-container {
     background: white;
     padding: 15px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 12px;
-    height: 320px; /* Cố định chiều cao */
+    height: 320px;
     position: relative;
 }
 
-/* Tab nội dung ẩn/hiện */
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* Cài đặt API */
+/* Cài đặt */
 .settings-section {
     margin-bottom: 25px;
     padding: 15px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 10px;
 }
 
